@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Agenda Ateliê</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --rosa:         #f4a7c3;
+      --rosa-escuro:  #d6679a;
+      --rosa-claro:   #fde8f2;
+      --rosa-medio:   #f9c8df;
+      --creme:        #fdf0f7;
+      --dourado:      #e8a45a;
+      --chocolate:    #5a2340;
+      --baunilha:     #fde8f2;
+      --branco:       #ffffff;
+      --cinza:        #a07090;
+      --vermelho:     #e05252;
+      --altura-topo:  82px;
+      --altura-rodape:76px;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body, html { height:100%; font-family:'Lato',sans-serif; background:var(--creme); color:var(--chocolate); overflow:hidden; }
+
+    body::before {
+      content:''; position:fixed; inset:0; z-index:0;
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(244,167,195,.22) 0%, transparent 55%),
+        radial-gradient(circle at 90% 80%, rgba(214,103,154,.14) 0%, transparent 55%),
+        radial-gradient(circle at 50% 50%, rgba(253,232,242,.5) 0%, transparent 70%);
+      pointer-events:none;
+    }
+
+    /* ── LAYOUT ── */
+    .app { display:flex; flex-direction:column; height:100%; position:relative; z-index:1; }
+
+    /* ── TOPO ── */
+    .topo {
+      height:var(--altura-topo);
+      background:linear-gradient(135deg, var(--chocolate) 0%, #8b3060 100%);
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; position:relative;
+      box-shadow:0 4px 20px rgba(90,35,64,.35);
+    }
+    .topo-inner { display:flex; flex-direction:column; align-items:center; gap:2px; }
+    .topo-icon { font-size:1.1rem; }
+    .topo h1 {
+      font-family:'Playfair Display',serif;
+      font-size:1.75rem; font-weight:700;
+      color:var(--branco); letter-spacing:.14em;
+      text-transform:uppercase;
+    }
+    .topo h1 span { color:var(--rosa); font-style:italic; }
+    .topo-linha {
+      position:absolute; bottom:0; left:0; right:0; height:3px;
+      background:linear-gradient(90deg, transparent, var(--dourado), var(--rosa), var(--rosa-escuro), var(--dourado), transparent);
+    }
+
+    /* ── MEIO (home) ── */
+    .conteudo {
+      flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;
+      padding:0; overflow:hidden;
+    }
+
+    /* Área de logo — ocupa TODO o espaço disponível */
+    .logo-area {
+      width:100%; height:100%;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; position:relative;
+      overflow:hidden;
+    }
+    .logo-placeholder {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:16px;
+      width:min(75vw, 75vh);
+      height:min(75vw, 75vh);
+      border:3px dashed rgba(214,103,154,.4); border-radius:50%;
+      background:rgba(253,232,242,.55);
+      transition:all .25s ease;
+    }
+    .logo-placeholder:hover { border-color:var(--rosa-escuro); background:rgba(253,232,242,.85); }
+    .logo-placeholder i { font-size:4rem; color:rgba(214,103,154,.55); }
+    .logo-placeholder span { font-size:.9rem; color:var(--cinza); font-weight:700; text-transform:uppercase; letter-spacing:.08em; text-align:center; line-height:1.6; }
+    .logo-img {
+      width:min(75vw, 75vh);
+      height:min(75vw, 75vh);
+      border-radius:50%;
+      object-fit:cover;
+      box-shadow:0 12px 48px rgba(90,35,64,.22);
+      border:5px solid var(--rosa-medio);
+      display:none;
+    }
+    .logo-img.visivel { display:block; }
+    #logo-input { display:none; }
+
+    /* ── RODAPÉ NAV ── */
+    .rodape-nav {
+      height:var(--altura-rodape);
+      background:linear-gradient(135deg, var(--chocolate) 0%, #8b3060 100%);
+      display:flex; align-items:stretch;
+      border-top:3px solid var(--rosa);
+      box-shadow:0 -4px 20px rgba(90,35,64,.28);
+      flex-shrink:0;
+    }
+    .nav-btn {
+      flex:1; background:none; border:none;
+      color:rgba(255,255,255,.5);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:5px; cursor:pointer;
+      font-family:'Lato',sans-serif; font-weight:700;
+      font-size:.72rem; text-transform:uppercase; letter-spacing:.05em;
+      transition:all .22s ease; position:relative; padding:8px 0;
+    }
+    .nav-btn .nav-icone-wrap {
+      width:42px; height:42px; border-radius:14px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.45rem;
+      background:rgba(255,255,255,.08);
+      transition:all .22s ease;
+    }
+    /* Ícone Agenda - azul/turquesa */
+    #btn-nav-agenda .nav-icone-wrap { color:#64b5f6; }
+    #btn-nav-agenda:hover .nav-icone-wrap,
+    #btn-nav-agenda.ativo .nav-icone-wrap {
+      background:rgba(100,181,246,.22);
+      box-shadow:0 4px 14px rgba(100,181,246,.45);
+      color:#90caf9;
+    }
+    /* Ícone Pedidos - rosa/salmão */
+    #btn-nav-pedidos .nav-icone-wrap { color:#f48fb1; }
+    #btn-nav-pedidos:hover .nav-icone-wrap,
+    #btn-nav-pedidos.ativo .nav-icone-wrap {
+      background:rgba(244,143,177,.22);
+      box-shadow:0 4px 14px rgba(244,143,177,.45);
+      color:#f8bbd9;
+    }
+    .nav-btn:hover, .nav-btn.ativo { color:var(--branco); }
+    .nav-btn.ativo::after {
+      content:''; position:absolute; top:0; left:20%; right:20%;
+      height:3px; background:var(--rosa); border-radius:0 0 3px 3px;
+    }
+    .nav-divisor { width:1px; background:rgba(255,255,255,.12); margin:12px 0; }
+
+    /* ── MODAIS ── */
+    .modal {
+      position:fixed; inset:0;
+      background:rgba(90,35,64,.45); backdrop-filter:blur(5px);
+      display:none; justify-content:flex-end; align-items:flex-end; z-index:100;
+    }
+    .modal.open { display:flex; }
+    .modal.open .janela { animation:slideUp .32s cubic-bezier(.34,1.1,.64,1) both; }
+
+    .janela {
+      background:var(--branco); width:100%;
+      height:calc(100% - var(--altura-topo));
+      border-radius:24px 24px 0 0;
+      display:flex; flex-direction:column; overflow:hidden;
+    }
+    .janela header {
+      padding:16px 20px 14px;
+      background:linear-gradient(135deg, var(--chocolate) 0%, #8b3060 100%);
+      display:flex; justify-content:space-between; align-items:center; flex-shrink:0;
+    }
+    .titulo-header { display:flex; align-items:center; gap:10px; }
+    .icone-header {
+      width:36px; height:36px; background:rgba(255,255,255,.15); border-radius:10px;
+      display:flex; align-items:center; justify-content:center; font-size:1.15rem;
+    }
+    .janela header h2 { font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--branco); font-weight:500; }
+    .fecha {
+      background:rgba(255,255,255,.12); border:none; color:var(--branco);
+      width:32px; height:32px; border-radius:50%; font-size:1rem;
+      display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .2s;
+    }
+    .fecha:hover { background:rgba(255,255,255,.28); }
+
+    .janela main { flex:1; overflow-y:auto; padding:18px; background:var(--creme); }
+    .janela footer {
+      height:64px; display:flex; justify-content:flex-end; align-items:center;
+      padding:0 18px; gap:10px;
+      background:var(--branco); border-top:1px solid rgba(244,167,195,.25); flex-shrink:0;
+    }
+
+    /* ── BOTÕES ── */
+    .btn-acao {
+      background:linear-gradient(135deg,var(--rosa-escuro),var(--rosa));
+      color:var(--branco); border:none; padding:11px 20px; border-radius:50px;
+      font-size:.87rem; font-family:'Lato',sans-serif; font-weight:700; cursor:pointer;
+      letter-spacing:.04em; text-transform:uppercase; transition:all .2s;
+      box-shadow:0 4px 14px rgba(214,103,154,.4);
+      display:flex; align-items:center; gap:7px;
+    }
+    .btn-acao:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(214,103,154,.58); }
+    .btn-acao.secundario { background:var(--baunilha); color:var(--chocolate); box-shadow:none; border:1.5px solid rgba(244,167,195,.4); }
+    .btn-acao.danger { background:linear-gradient(135deg,#b03020,#e05252); box-shadow:0 4px 14px rgba(224,82,82,.38); }
+
+    /* Ícones coloridos nos botões de ação */
+    #btn-abrir-form i { color:#a8e6cf; }
+    #btn-salvar-pedido i { color:#a8e6cf; }
+    #btn-cancelar-form i { color:#e07878; }
+    #btn-detalhe-editar i { color:#f9c74f; }
+    .btn-acao.danger i { color:#ffd6d6; }
+    .btn-acao.secundario#confirm-nao i { color:#e07878; }
+
+    /* ── CAMPOS ── */
+    .campo { margin-bottom:15px; }
+    .campo label {
+      display:flex; align-items:center; gap:6px; margin-bottom:7px;
+      font-size:.77rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+      color:var(--chocolate); opacity:.75;
+    }
+    .campo label i { color:var(--rosa-escuro); font-size:.85rem; }
+    .campo input, .campo textarea, .campo select {
+      width:100%; padding:12px 14px;
+      border:1.5px solid rgba(244,167,195,.35); border-radius:12px;
+      font-size:.95rem; font-family:'Lato',sans-serif;
+      background:var(--branco); color:var(--chocolate);
+      transition:border-color .2s,box-shadow .2s; outline:none;
+      -webkit-appearance:none; appearance:none;
+    }
+    .campo input:focus, .campo textarea:focus, .campo select:focus {
+      border-color:var(--rosa-escuro); box-shadow:0 0 0 3px rgba(214,103,154,.18);
+    }
+
+    /* Campo produto maior */
+    #f-produto {
+      min-height:80px;
+      resize:vertical;
+    }
+
+    /* Campo hora — 100% confinado, sem botão saindo do layout */
+    .campo-hora-wrap {
+      width:100%;
+      overflow:hidden;
+      border-radius:12px;
+    }
+    #f-hora {
+      display:block;
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      box-sizing:border-box;
+      padding:12px 14px;
+      font-size:1rem;
+      font-family:'Lato',sans-serif;
+      color:var(--chocolate);
+      background:var(--branco);
+      border:1.5px solid rgba(244,167,195,.35);
+      border-radius:12px;
+      overflow:hidden;
+      -webkit-appearance:none;
+      appearance:none;
+      outline:none;
+    }
+    #f-hora:focus {
+      border-color:var(--rosa-escuro);
+      box-shadow:0 0 0 3px rgba(214,103,154,.18);
+    }
+
+    /* ── CALENDÁRIO ── */
+    .calendario-grid { background:var(--branco); border-radius:16px; padding:16px; box-shadow:0 2px 8px rgba(90,35,64,.08); border:1px solid rgba(244,167,195,.2); }
+    .cal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .cal-header h3 { font-family:'Playfair Display',serif; color:var(--chocolate); font-size:.98rem; }
+    .cal-nav { background:none; border:none; color:var(--rosa-escuro); font-size:1.2rem; cursor:pointer; padding:4px 10px; }
+    .cal-dias-semana { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:5px; }
+    .cal-dias-semana span { font-size:.68rem; font-weight:700; color:var(--cinza); text-transform:uppercase; padding:3px 0; }
+    .cal-dias { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+    .cal-dia {
+      aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+      font-size:.83rem; border-radius:50%; cursor:pointer; color:var(--chocolate); transition:all .15s;
+    }
+    .cal-dia:hover { background:var(--rosa-claro); }
+    .cal-dia.hoje { background:var(--rosa-escuro); color:var(--branco); font-weight:700; }
+    .cal-dia.tem-pedido { position:relative; }
+    .cal-dia.tem-pedido::after { content:''; position:absolute; bottom:2px; width:4px; height:4px; background:var(--dourado); border-radius:50%; }
+    .cal-dia.vazio { pointer-events:none; }
+
+    /* ── LISTA PEDIDOS ── */
+    .lista-pedidos { display:flex; flex-direction:column; gap:11px; }
+    .pedido-item {
+      background:var(--branco); border-radius:16px; padding:14px 16px;
+      box-shadow:0 2px 10px rgba(90,35,64,.09); border-left:4px solid var(--rosa);
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      transition:transform .15s,box-shadow .15s;
+    }
+    .pedido-item:hover { transform:translateX(3px); box-shadow:0 4px 16px rgba(90,35,64,.16); }
+    .pedido-info { flex:1; cursor:pointer; min-width:0; }
+    .pedido-nome { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; color:var(--chocolate); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .pedido-data { font-size:.78rem; color:var(--cinza); margin-top:3px; display:flex; align-items:center; gap:4px; }
+    .badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:.7rem; font-weight:700; margin-top:5px; }
+    .badge.pendente { background:#fff3e0; color:#e65100; }
+    .badge.producao  { background:#e3f2fd; color:#1565c0; }
+    .badge.pronto    { background:#e8f5e9; color:#2e7d32; }
+    .badge.entregue  { background:#f3e5f5; color:#6a1b9a; }
+    .badge.hoje-entrega {
+      background:linear-gradient(135deg,#ff6f00,#ffa000);
+      color:#fff; font-size:.75rem; padding:4px 12px;
+      border-radius:20px; font-weight:700; letter-spacing:.04em;
+      animation:pulse 1.4s ease-in-out infinite;
+      display:inline-block; margin-top:5px;
+    }
+    .pedido-item.entrega-hoje {
+      border-left:4px solid #ff6f00;
+      background:linear-gradient(135deg,#fff8e1,#fff3cd);
+      box-shadow:0 2px 14px rgba(255,111,0,.18);
+    }
+    .pedido-acoes { display:flex; flex-direction:column; gap:7px; flex-shrink:0; }
+    .btn-icone {
+      width:34px; height:34px; border-radius:10px; border:none; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; font-size:.9rem; transition:all .18s;
+    }
+    /* Ícone editar — laranja/dourado */
+    .btn-icone.editar  { background:rgba(232,164,90,.15); color:#e8a45a; }
+    .btn-icone.editar:hover  { background:#e8a45a; color:var(--branco); }
+    /* Ícone excluir — vermelho */
+    .btn-icone.excluir { background:rgba(224,82,82,.12); color:#e05252; }
+    .btn-icone.excluir:hover { background:#e05252; color:var(--branco); }
+
+    /* ── DETALHE ── */
+    .detalhe-linha {
+      display:flex; align-items:flex-start; gap:12px;
+      padding:13px 0; border-bottom:1px solid rgba(244,167,195,.2);
+    }
+    .detalhe-linha:last-child { border-bottom:none; }
+    .detalhe-icone {
+      width:38px; height:38px; flex-shrink:0; background:var(--rosa-claro); border-radius:10px;
+      display:flex; align-items:center; justify-content:center; font-size:1rem; color:var(--rosa-escuro);
+    }
+    .detalhe-label { font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--cinza); margin-bottom:3px; }
+    .detalhe-valor { font-size:.97rem; font-weight:700; color:var(--chocolate); }
+
+    /* ── SEÇÃO TÍTULO ── */
+    .secao-titulo {
+      font-family:'Playfair Display',serif; font-size:.92rem; color:var(--chocolate);
+      margin:18px 0 10px; display:flex; align-items:center; gap:7px;
+    }
+
+    /* ── VAZIO ── */
+    .vazio-msg { text-align:center; padding:36px 20px; color:var(--cinza); }
+    .vazio-msg .vi { font-size:2.8rem; margin-bottom:10px; }
+    .vazio-msg p { font-size:.9rem; line-height:1.5; }
+
+    /* ── TOAST ── */
+    .toast {
+      position:fixed; bottom:calc(var(--altura-rodape) + 12px); left:50%;
+      transform:translateX(-50%) translateY(20px);
+      background:var(--chocolate); color:var(--branco);
+      padding:11px 20px; border-radius:50px; font-size:.87rem; font-weight:700;
+      box-shadow:0 6px 24px rgba(90,35,64,.35); opacity:0; pointer-events:none;
+      z-index:999; transition:all .3s ease; white-space:nowrap;
+      display:flex; align-items:center; gap:7px;
+    }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* ── CONFIRM ── */
+    .confirm-overlay {
+      position:fixed; inset:0; background:rgba(90,35,64,.55); backdrop-filter:blur(4px);
+      display:none; align-items:center; justify-content:center; z-index:200; padding:24px;
+    }
+    .confirm-overlay.open { display:flex; }
+    .confirm-box {
+      background:var(--branco); border-radius:22px; padding:28px 22px;
+      width:100%; max-width:320px; text-align:center;
+      box-shadow:0 14px 48px rgba(90,35,64,.28); animation:fadeUp .28s ease;
+    }
+    .confirm-box .ci { font-size:2.4rem; margin-bottom:10px; }
+    .confirm-box h3 { font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--chocolate); margin-bottom:7px; }
+    .confirm-box p { font-size:.86rem; color:var(--cinza); margin-bottom:20px; line-height:1.5; }
+    .confirm-btns { display:flex; gap:10px; }
+    .confirm-btns .btn-acao { flex:1; justify-content:center; }
+
+    /* ── ANIMAÇÕES ── */
+    @keyframes fadeUp  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    @keyframes float   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+    @keyframes pulse   { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+    @keyframes ring    { 0%,100%{transform:rotate(0deg)} 15%{transform:rotate(-18deg)} 30%{transform:rotate(18deg)} 45%{transform:rotate(-12deg)} 60%{transform:rotate(12deg)} 75%{transform:rotate(-6deg)} 90%{transform:rotate(6deg)} }
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-thumb { background:var(--rosa); border-radius:4px; }
+
+    /* ── ALARME OVERLAY ── */
+    .alarme-overlay {
+      position:fixed; inset:0; z-index:500;
+      background:rgba(90,35,64,.72); backdrop-filter:blur(8px);
+      display:none; align-items:center; justify-content:center; padding:28px;
+    }
+    .alarme-overlay.open { display:flex; }
+    .alarme-box {
+      background:var(--branco); border-radius:28px; padding:36px 28px 28px;
+      width:100%; max-width:340px; text-align:center;
+      box-shadow:0 20px 60px rgba(90,35,64,.4);
+      animation:fadeUp .35s ease both;
+    }
+    .alarme-icone-wrap {
+      font-size:3.5rem; display:block; margin-bottom:14px;
+    }
+    .alarme-icone-wrap.tocando { animation:ring .7s ease-in-out infinite; }
+    .alarme-tipo {
+      font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em;
+      color:var(--rosa-escuro); margin-bottom:8px;
+    }
+    .alarme-box h2 {
+      font-family:'Playfair Display',serif; font-size:1.25rem;
+      color:var(--chocolate); margin-bottom:6px;
+    }
+    .alarme-box .alarme-cliente {
+      font-size:1rem; color:var(--cinza); margin-bottom:4px;
+    }
+    .alarme-box .alarme-produto {
+      font-size:.88rem; color:var(--chocolate); font-weight:700;
+      background:var(--rosa-claro); border-radius:10px; padding:8px 14px;
+      margin:12px 0 20px;
+    }
+    .alarme-box .alarme-hora {
+      font-size:.82rem; color:var(--cinza); margin-bottom:20px;
+    }
+    .btn-desligar {
+      width:100%; padding:14px; border-radius:50px; border:none;
+      background:linear-gradient(135deg,var(--rosa-escuro),var(--rosa));
+      color:var(--branco); font-size:1rem; font-family:'Lato',sans-serif;
+      font-weight:700; cursor:pointer; letter-spacing:.05em;
+      box-shadow:0 6px 20px rgba(214,103,154,.45);
+      display:flex; align-items:center; justify-content:center; gap:9px;
+      animation:pulse 1.4s ease-in-out infinite;
+    }
+    .btn-desligar:active { transform:scale(.97); }
+
+    /* Lista de pedidos dentro do overlay */
+    .alarme-pedido-card {
+      background:var(--rosa-claro); border-radius:14px;
+      padding:11px 14px; margin-bottom:8px; text-align:left;
+      border-left:4px solid var(--rosa-escuro);
+    }
+    .alarme-pedido-card .ap-nome { font-weight:700; color:var(--chocolate); font-size:.95rem; }
+    .alarme-pedido-card .ap-prod { font-size:.83rem; color:var(--cinza); margin-top:2px; }
+    .alarme-pedido-card .ap-hora { font-size:.78rem; color:var(--rosa-escuro); margin-top:3px; font-weight:700; }
+    .alarme-total { font-size:.8rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.07em; color:var(--rosa-escuro); margin-bottom:10px; text-align:center; }
+
+    /* Card de alarme nativo copiável */
+    .alarme-nativo-card {
+      background:var(--branco); border:1.5px solid rgba(244,167,195,.4);
+      border-radius:14px; padding:12px 14px;
+    }
+    .alarme-nativo-card .anc-horario {
+      font-size:.72rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.07em; color:var(--rosa-escuro); margin-bottom:4px;
+    }
+    .alarme-nativo-card .anc-texto {
+      font-size:.85rem; color:var(--chocolate); font-weight:700;
+      background:var(--creme); border-radius:8px; padding:8px 10px;
+      margin-bottom:8px; line-height:1.5; word-break:break-word;
+    }
+    .btn-copiar {
+      width:100%; padding:9px; border-radius:50px; border:none;
+      background:linear-gradient(135deg,var(--rosa-escuro),var(--rosa));
+      color:var(--branco); font-size:.82rem; font-family:'Lato',sans-serif;
+      font-weight:700; cursor:pointer; display:flex; align-items:center;
+      justify-content:center; gap:7px; transition:all .2s;
+    }
+    .btn-copiar:active { transform:scale(.97); }
+    .btn-copiar.copiado { background:linear-gradient(135deg,#2e7d32,#43a047); }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══ TOPO FIXO ══ -->
+  <header class="topo">
+    <div class="topo-inner">
+      <span class="topo-icon">🎂</span>
+      <h1>AGENDA <span>Ateliê</span></h1>
+    </div>
+    <div class="topo-linha"></div>
+  </header>
+
+  <!-- ══ HOME ══ -->
+  <div class="conteudo">
+    <div class="logo-area" id="logo-area" title="Toque 3x para trocar a logo">
+      <img class="logo-img" id="logo-img" src="" alt="Logo do ateliê">
+      <div class="logo-placeholder" id="logo-placeholder">
+        <i class="fas fa-camera"></i>
+        <span>Toque para adicionar<br>sua logo</span>
+      </div>
+    </div>
+    <input type="file" id="logo-input" accept="image/*">
+  </div>
+
+  <!-- ══ RODAPÉ NAV ══ -->
+  <nav class="rodape-nav">
+    <button class="nav-btn" id="btn-nav-agenda">
+      <div class="nav-icone-wrap">
+        <i class="fas fa-calendar-alt"></i>
+      </div>
+      📅 Agenda
+    </button>
+    <div class="nav-divisor"></div>
+    <button class="nav-btn" id="btn-nav-pedidos">
+      <div class="nav-icone-wrap">
+        <i class="fas fa-clipboard-list"></i>
+      </div>
+      🧁 Pedidos
+    </button>
+  </nav>
+</div>
+
+<!-- ══════════ MODAL AGENDA ══════════ -->
+<div class="modal" id="modal-agenda">
+  <div class="janela">
+    <header>
+      <div class="titulo-header">
+        <div class="icone-header">📅</div>
+        <h2>Agenda de Entregas</h2>
+      </div>
+      <button class="fecha" data-close>✕</button>
+    </header>
+    <main>
+      <!-- Calendário -->
+      <div class="calendario-grid">
+        <div class="cal-header">
+          <button class="cal-nav" id="prev-mes">‹</button>
+          <h3 id="cal-titulo"></h3>
+          <button class="cal-nav" id="next-mes">›</button>
+        </div>
+        <div class="cal-dias-semana">
+          <span>Dom</span><span>Seg</span><span>Ter</span>
+          <span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+        </div>
+        <div class="cal-dias" id="cal-dias"></div>
+      </div>
+      <!-- Pedidos do mês REMOVIDOS do calendário — aparecem só na aba Pedidos -->
+    </main>
+    <footer>
+      <button class="btn-acao secundario" onclick="document.getElementById('modal-agenda').classList.remove('open')">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </button>
+      <button class="btn-acao" id="btn-abrir-form">
+        <i class="fas fa-plus"></i> Agendar Pedido 🍰
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- ══════════ MODAL PEDIDOS ══════════ -->
+<div class="modal" id="modal-pedidos">
+  <div class="janela">
+    <header>
+      <div class="titulo-header">
+        <div class="icone-header">🧁</div>
+        <h2>Todos os Pedidos</h2>
+      </div>
+      <button class="fecha" data-close>✕</button>
+    </header>
+    <main>
+      <div id="pedidos-lista" class="lista-pedidos"></div>
+    </main>
+    <footer>
+      <button class="btn-acao secundario" onclick="document.getElementById('modal-pedidos').classList.remove('open')">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- ══════════ MODAL AGENDAR / EDITAR ══════════ -->
+<div class="modal" id="modal-form">
+  <div class="janela">
+    <header>
+      <div class="titulo-header">
+        <div class="icone-header">🍰</div>
+        <h2 id="form-titulo">Agendar Pedido</h2>
+      </div>
+      <button class="fecha" id="fecha-form">✕</button>
+    </header>
+    <main>
+      <input type="hidden" id="edit-id">
+      <div class="campo">
+        <label><i class="fas fa-user"></i> Nome do cliente</label>
+        <input type="text" id="f-nome" placeholder="Ex: Maria Silva" autocomplete="off">
+      </div>
+      <div class="campo">
+        <label><i class="fas fa-phone"></i> Telefone / WhatsApp</label>
+        <input type="tel" id="f-tel" placeholder="(11) 99999-0000" inputmode="numeric" maxlength="15">
+      </div>
+      <div class="campo">
+        <label>🎂 Produto</label>
+        <textarea id="f-produto" placeholder="Ex: Bolo de chocolate 3 andares, decoração floral, recheio brigadeiro..." rows="3"></textarea>
+      </div>
+      <div class="campo">
+        <label><i class="fas fa-dollar-sign"></i> Valor total</label>
+        <input type="text" id="f-valor" placeholder="R$ 0,00" inputmode="numeric">
+      </div>
+      <div class="campo">
+        <label><i class="fas fa-calendar-day"></i> Data de entrega</label>
+        <input type="date" id="f-data">
+      </div>
+      <div class="campo">
+        <label><i class="fas fa-clock"></i> Horário de entrega</label>
+        <div class="campo-hora-wrap">
+          <input type="time" id="f-hora">
+        </div>
+      </div>
+      <div class="campo">
+        <label><i class="fas fa-tag"></i> Status</label>
+        <select id="f-status">
+          <option value="pendente">⏳ Pendente</option>
+          <option value="producao">🔧 Em produção</option>
+          <option value="pronto">✅ Pronto</option>
+          <option value="entregue">🚗 Entregue</option>
+        </select>
+      </div>
+    </main>
+    <footer>
+      <button class="btn-acao secundario" id="btn-cancelar-form">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </button>
+      <button class="btn-acao" id="btn-salvar-pedido">
+        <i class="fas fa-check-circle"></i> Salvar Pedido 🍰
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- ══════════ MODAL DETALHE ══════════ -->
+<div class="modal" id="modal-detalhe">
+  <div class="janela">
+    <header>
+      <div class="titulo-header">
+        <div class="icone-header">🎂</div>
+        <h2>Detalhes do Pedido</h2>
+      </div>
+      <button class="fecha" data-close>✕</button>
+    </header>
+    <main>
+      <div id="detalhe-conteudo"></div>
+    </main>
+    <footer>
+      <button class="btn-acao secundario" onclick="document.getElementById('modal-detalhe').classList.remove('open')">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </button>
+      <button class="btn-acao secundario" id="btn-detalhe-editar">
+        <i class="fas fa-pencil-alt"></i> Editar Pedido ✏️
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- ══ CONFIRM EXCLUIR ══ -->
+<div class="confirm-overlay" id="confirm-excluir">
+  <div class="confirm-box">
+    <div class="ci">🗑️</div>
+    <h3>Excluir pedido?</h3>
+    <p>Essa ação não poderá ser desfeita. Tem certeza que deseja excluir este pedido?</p>
+    <div class="confirm-btns">
+      <button class="btn-acao secundario" id="confirm-nao" style="justify-content:center">
+        <i class="fas fa-times"></i> Não, voltar
+      </button>
+      <button class="btn-acao danger" id="confirm-sim" style="justify-content:center">
+        <i class="fas fa-trash"></i> Sim, excluir
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALARME OVERLAY ══ -->
+<div class="alarme-overlay" id="alarme-overlay">
+  <div class="alarme-box">
+    <span class="alarme-icone-wrap" id="alarme-icone">🔔</span>
+    <div class="alarme-tipo" id="alarme-tipo">Lembrete</div>
+    <h2 id="alarme-titulo">Pedido amanhã!</h2>
+    <div id="alarme-lista-pedidos"></div>
+    <div class="alarme-hora" id="alarme-hora"></div>
+    <button class="btn-desligar" id="btn-desligar">
+      <i class="fas fa-bell-slash"></i> Desligar alarme
+    </button>
+  </div>
+</div>
+
+<!-- ══ MODAL CRIAR ALARME NATIVO ══ -->
+<div class="confirm-overlay" id="modal-alarme-nativo" style="align-items:flex-end;padding:0;">
+  <div style="background:var(--branco);width:100%;max-width:480px;height:85vh;border-radius:24px 24px 0 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -8px 40px rgba(90,35,64,.3);">
+    <!-- Cabeçalho fixo -->
+    <div style="padding:18px 20px 14px;background:linear-gradient(135deg,var(--chocolate) 0%,#8b3060 100%);flex-shrink:0;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:4px">📲</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--branco);font-weight:500">Criar alarme no celular</div>
+      <div style="font-size:.78rem;color:rgba(255,255,255,.7);margin-top:4px">Copie o texto e cole no rótulo do app <strong>Relógio</strong></div>
+    </div>
+    <!-- Conteúdo com rolagem -->
+    <div style="flex:1;overflow-y:auto;padding:16px;background:var(--creme);" id="alarme-cards-nativo"></div>
+    <!-- Rodapé fixo -->
+    <div style="padding:14px 18px;background:var(--branco);border-top:1px solid rgba(244,167,195,.25);flex-shrink:0;">
+      <button class="btn-acao secundario" id="btn-fechar-nativo" style="width:100%;justify-content:center">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── DADOS ── */
+let pedidos = JSON.parse(localStorage.getItem('atelie-pedidos') || '[]');
+let excluirId = null;
+let detalheId = null;
+
+function salvar() { localStorage.setItem('atelie-pedidos', JSON.stringify(pedidos)); }
+
+/* ── TOAST ── */
+function toast(msg, ic = '✅') {
+  const t = document.getElementById('toast');
+  t.innerHTML = `<span>${ic}</span> ${msg}`;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ── MODAIS ── */
+function abrirModal(id) { document.getElementById(id).classList.add('open'); }
+function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Fechar ao clicar fora
+document.querySelectorAll('.modal').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+// Botões data-close
+document.querySelectorAll('[data-close]').forEach(b => {
+  b.addEventListener('click', e => e.currentTarget.closest('.modal').classList.remove('open'));
+});
+
+/* ── NAV RODAPÉ ── */
+document.getElementById('btn-nav-agenda').addEventListener('click', () => {
+  setNavAtivo('btn-nav-agenda');
+  abrirModal('modal-agenda');
+});
+document.getElementById('btn-nav-pedidos').addEventListener('click', () => {
+  setNavAtivo('btn-nav-pedidos');
+  renderLista('pedidos-lista', pedidos);
+  abrirModal('modal-pedidos');
+});
+function setNavAtivo(id) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
+  document.getElementById(id).classList.add('ativo');
+}
+// Remove ativo ao fechar modais
+document.querySelectorAll('.modal').forEach(m => {
+  const ob = new MutationObserver(() => {
+    if (!m.classList.contains('open')) {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
+    }
+  });
+  ob.observe(m, { attributes:true, attributeFilter:['class'] });
+});
+
+/* ── BOTÃO AGENDAR DA AGENDA ── */
+document.getElementById('btn-abrir-form').addEventListener('click', () => {
+  limparForm();
+  abrirModal('modal-form');
+});
+
+/* ── MÁSCARAS ── */
+document.getElementById('f-tel').addEventListener('input', function () {
+  let v = this.value.replace(/\D/g, '').slice(0, 11);
+  if (!v) { this.value = ''; return; }
+  if (v.length <= 2)  this.value = '(' + v;
+  else if (v.length <= 7) this.value = '(' + v.slice(0,2) + ') ' + v.slice(2);
+  else this.value = '(' + v.slice(0,2) + ') ' + v.slice(2,7) + '-' + v.slice(7);
+});
+document.getElementById('f-valor').addEventListener('input', function () {
+  let v = this.value.replace(/\D/g, '');
+  if (!v) { this.value = ''; return; }
+  this.value = 'R$ ' + (parseInt(v) / 100).toFixed(2).replace('.', ',');
+});
+
+/* ── BADGE ── */
+function badgeHtml(s) {
+  return ({
+    pendente: '<span class="badge pendente">⏳ Pendente</span>',
+    producao: '<span class="badge producao">🔧 Em produção</span>',
+    pronto:   '<span class="badge pronto">✅ Pronto</span>',
+    entregue: '<span class="badge entregue">🚗 Entregue</span>',
+  })[s] || '';
+}
+
+/* ── FORMATAR DATA ── */
+function fmtData(d, h) {
+  if (!d) return '—';
+  const [a, m, dd] = d.split('-');
+  return `${dd}/${m}/${a}` + (h ? ` às ${h}` : '');
+}
+
+function isHoje(d) {
+  if (!d) return false;
+  return d === new Date().toISOString().slice(0,10);
+}
+
+/* ── RENDER LISTAS ── */
+function renderListas() {
+  renderLista('pedidos-lista', pedidos);
+  renderCalendario();
+}
+
+function renderLista(containerId, lista) {
+  const el = document.getElementById(containerId);
+  if (!lista.length) {
+    el.innerHTML = `<div class="vazio-msg"><div class="vi">🍰</div><p>Nenhum pedido ainda.<br>Use <strong>Agenda</strong> para agendar o primeiro! 😊</p></div>`;
+    return;
+  }
+  el.innerHTML = lista.map(p => {
+    const entregaHoje = isHoje(p.data) && p.status !== 'entregue';
+    const badgeHoje = entregaHoje
+      ? `<span class="badge hoje-entrega">🚨 ESTA ENTREGA É PRA HOJE!</span>`
+      : '';
+    return `
+    <div class="pedido-item${entregaHoje ? ' entrega-hoje' : ''}">
+      <div class="pedido-info" onclick="abrirDetalhe('${p.id}')">
+        <div class="pedido-nome">👤 ${p.nome}</div>
+        <div class="pedido-data"><i class="fas fa-calendar-day"></i> ${fmtData(p.data, p.hora)}</div>
+        ${badgeHtml(p.status)}
+        ${badgeHoje}
+      </div>
+      <div class="pedido-acoes">
+        <button class="btn-icone editar" title="Editar pedido ✏️" onclick="editarPedido('${p.id}')">
+          <i class="fas fa-pencil-alt"></i>
+        </button>
+        <button class="btn-icone excluir" title="Excluir pedido 🗑️" onclick="confirmarExcluir('${p.id}')">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── DETALHE ── */
+function abrirDetalhe(id) {
+  const p = pedidos.find(x => x.id === id);
+  if (!p) return;
+  detalheId = id;
+  document.getElementById('detalhe-conteudo').innerHTML = `
+    <div class="detalhe-linha">
+      <div class="detalhe-icone"><i class="fas fa-user"></i></div>
+      <div><div class="detalhe-label">Nome do cliente</div><div class="detalhe-valor">${p.nome || '—'}</div></div>
+    </div>
+    <div class="detalhe-linha">
+      <div class="detalhe-icone"><i class="fas fa-phone"></i></div>
+      <div><div class="detalhe-label">📱 Telefone / WhatsApp</div><div class="detalhe-valor">${p.tel || '—'}</div></div>
+    </div>
+    <div class="detalhe-linha">
+      <div class="detalhe-icone">🎂</div>
+      <div><div class="detalhe-label">Produto</div><div class="detalhe-valor">${p.produto || '—'}</div></div>
+    </div>
+    <div class="detalhe-linha">
+      <div class="detalhe-icone"><i class="fas fa-dollar-sign"></i></div>
+      <div><div class="detalhe-label">💰 Valor total</div><div class="detalhe-valor">${p.valor || '—'}</div></div>
+    </div>
+    <div class="detalhe-linha">
+      <div class="detalhe-icone"><i class="fas fa-calendar-day"></i></div>
+      <div><div class="detalhe-label">📅 Data e horário</div><div class="detalhe-valor">${fmtData(p.data, p.hora)}</div></div>
+    </div>
+    <div class="detalhe-linha">
+      <div class="detalhe-icone"><i class="fas fa-tag"></i></div>
+      <div><div class="detalhe-label">Status</div><div class="detalhe-valor">${badgeHtml(p.status)}</div></div>
+    </div>`;
+  abrirModal('modal-detalhe');
+}
+document.getElementById('btn-detalhe-editar').addEventListener('click', () => {
+  if (detalheId) { fecharModal('modal-detalhe'); editarPedido(detalheId); }
+});
+
+/* ── FORM ── */
+function limparForm() {
+  ['edit-id','f-nome','f-tel','f-produto','f-valor','f-data','f-hora'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-status').value = 'pendente';
+  document.getElementById('form-titulo').textContent = 'Agendar Pedido';
+  document.getElementById('btn-salvar-pedido').innerHTML = '<i class="fas fa-check-circle"></i> Salvar Pedido 🍰';
+}
+document.getElementById('fecha-form').addEventListener('click', () => { fecharModal('modal-form'); limparForm(); });
+document.getElementById('btn-cancelar-form').addEventListener('click', () => { fecharModal('modal-form'); limparForm(); });
+
+function editarPedido(id) {
+  const p = pedidos.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('edit-id').value   = p.id;
+  document.getElementById('f-nome').value    = p.nome;
+  document.getElementById('f-tel').value     = p.tel;
+  document.getElementById('f-produto').value = p.produto;
+  document.getElementById('f-valor').value   = p.valor;
+  document.getElementById('f-data').value    = p.data;
+  document.getElementById('f-hora').value    = p.hora;
+  document.getElementById('f-status').value  = p.status;
+  document.getElementById('form-titulo').textContent = 'Editar Pedido';
+  document.getElementById('btn-salvar-pedido').innerHTML = '<i class="fas fa-save"></i> Salvar Alterações ✏️';
+  abrirModal('modal-form');
+}
+
+document.getElementById('btn-salvar-pedido').addEventListener('click', () => {
+  const nome    = document.getElementById('f-nome').value.trim();
+  const tel     = document.getElementById('f-tel').value.trim();
+  const produto = document.getElementById('f-produto').value.trim();
+  const valor   = document.getElementById('f-valor').value.trim();
+  const data    = document.getElementById('f-data').value;
+  const hora    = document.getElementById('f-hora').value;
+  const status  = document.getElementById('f-status').value;
+  const editId  = document.getElementById('edit-id').value;
+
+  if (!nome)    { toast('Informe o nome do cliente! 😊', '⚠️'); return; }
+  if (!produto) { toast('Informe o produto! 🎂', '⚠️'); return; }
+
+  if (editId) {
+    const i = pedidos.findIndex(x => x.id === editId);
+    if (i > -1) pedidos[i] = { id:editId, nome, tel, produto, valor, data, hora, status };
+    toast('Pedido atualizado com sucesso! 🎉', '✏️');
+  } else {
+    pedidos.push({ id: Date.now().toString(), nome, tel, produto, valor, data, hora, status });
+    toast('Pedido agendado com sucesso! 🍰', '🎉');
+  }
+  salvar();
+  renderListas();
+  fecharModal('modal-form');
+  limparForm();
+  // Mostra guia de alarme nativo ao salvar pedido com data
+  if (data) setTimeout(() => AlarmeNativo.mostrarGuia(), 400);
+});
+
+/* ── EXCLUIR ── */
+function confirmarExcluir(id) {
+  excluirId = id;
+  document.getElementById('confirm-excluir').classList.add('open');
+}
+document.getElementById('confirm-nao').addEventListener('click', () => {
+  document.getElementById('confirm-excluir').classList.remove('open');
+  excluirId = null;
+});
+document.getElementById('confirm-sim').addEventListener('click', () => {
+  if (excluirId) {
+    pedidos = pedidos.filter(x => x.id !== excluirId);
+    salvar(); renderListas(); toast('Pedido excluído.', '🗑️');
+  }
+  document.getElementById('confirm-excluir').classList.remove('open');
+  excluirId = null;
+});
+
+/* ── CALENDÁRIO ── */
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+let dataCal = new Date();
+
+function renderCalendario() {
+  const ano = dataCal.getFullYear(), mes = dataCal.getMonth();
+  document.getElementById('cal-titulo').textContent = `${MESES[mes]} ${ano}`;
+  const prim  = new Date(ano, mes, 1).getDay();
+  const total = new Date(ano, mes + 1, 0).getDate();
+  const hoje  = new Date();
+  const prefix = `${ano}-${String(mes+1).padStart(2,'0')}`;
+  const comPedido = pedidos
+    .filter(p => p.data && p.data.startsWith(prefix))
+    .map(p => parseInt(p.data.split('-')[2]));
+  let h = '';
+  for (let i = 0; i < prim; i++) h += `<div class="cal-dia vazio"></div>`;
+  for (let d = 1; d <= total; d++) {
+    const isH = d === hoje.getDate() && mes === hoje.getMonth() && ano === hoje.getFullYear();
+    const tem  = comPedido.includes(d);
+    h += `<div class="cal-dia${isH?' hoje':''}${tem?' tem-pedido':''}">${d}</div>`;
+  }
+  document.getElementById('cal-dias').innerHTML = h;
+  // Pedidos NÃO são renderizados abaixo do calendário
+}
+
+document.getElementById('prev-mes').addEventListener('click', () => {
+  dataCal.setMonth(dataCal.getMonth() - 1); renderCalendario();
+});
+document.getElementById('next-mes').addEventListener('click', () => {
+  dataCal.setMonth(dataCal.getMonth() + 1); renderCalendario();
+});
+
+/* ── LOGO ── */
+(function() {
+  const input = document.getElementById('logo-input');
+  const img   = document.getElementById('logo-img');
+  const ph    = document.getElementById('logo-placeholder');
+  const area  = document.getElementById('logo-area');
+  let temLogo = false;
+
+  // Restaurar logo salva
+  const saved = localStorage.getItem('atelie-logo');
+  if (saved) {
+    img.src = saved;
+    img.classList.add('visivel');
+    ph.style.display = 'none';
+    temLogo = true;
+  }
+
+  // Aplicar imagem escolhida
+  input.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      img.src = e.target.result;
+      img.classList.add('visivel');
+      ph.style.display = 'none';
+      temLogo = true;
+      try { localStorage.setItem('atelie-logo', e.target.result); } catch(err) {}
+    };
+    reader.readAsDataURL(file);
+    this.value = '';
+  });
+
+  // Lógica de toque:
+  // — sem logo: 1 toque abre o seletor
+  // — com logo: 3 toques rápidos abre o seletor
+  let tapCount = 0, tapTimer = null;
+
+  area.addEventListener('click', () => {
+    if (!temLogo) {
+      input.click();
+      return;
+    }
+    tapCount++;
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(() => { tapCount = 0; }, 600);
+    if (tapCount >= 3) {
+      tapCount = 0;
+      clearTimeout(tapTimer);
+      input.click();
+    }
+  });
+})();
+
+/* ════════════════════════════════════════════
+   ── SISTEMA DE ALARMES (app interno) ──
+   • Um dia antes: aviso ao abrir o app (qualquer horário)
+   • No dia do pedido: alarme ao abrir o app (qualquer horário)
+     mostrando TODOS os pedidos do dia
+   ════════════════════════════════════════════ */
+const Alarme = (() => {
+  let alarmLoop = false;
+  let audioEl = null;
+
+  /* ── Gera WAV PCM 16-bit em memória e devolve data URL ──
+     Sintetiza uma melodia de alarme sem depender de AudioContext,
+     que fica bloqueado no celular sem toque direto do usuário. */
+  function gerarWavAlarme() {
+    const SR = 22050;
+    const notas = [
+      [880,.12,0],[988,.12,.14],[1047,.18,.28],
+      [880,.12,.52],[988,.12,.66],[1047,.30,.80],
+      [784,.12,1.20],[880,.12,1.34],[988,.50,1.48]
+    ];
+    const totalSeg = 2.2;
+    const numSamples = Math.ceil(SR * totalSeg);
+    const buf = new Float32Array(numSamples);
+
+    notas.forEach(([freq, dur, t0]) => {
+      const s0 = Math.floor(t0 * SR);
+      const sN = Math.min(numSamples, s0 + Math.floor(dur * SR));
+      for (let i = s0; i < sN; i++) {
+        const fase = (i - s0) / SR;
+        const period = 1 / freq;
+        const pos = (fase % period) / period;
+        const onda = pos < 0.5 ? 4*pos - 1 : 3 - 4*pos;
+        const at = Math.min(1, fase / 0.01);
+        const rel = Math.max(0, 1 - (fase / dur) * 0.6);
+        buf[i] += onda * 0.42 * at * rel;
+      }
+    });
+
+    const pcm = new Int16Array(numSamples);
+    for (let i = 0; i < numSamples; i++) {
+      pcm[i] = Math.max(-32768, Math.min(32767, Math.round(buf[i] * 32767)));
+    }
+
+    const dataLen = pcm.buffer.byteLength;
+    const wav = new ArrayBuffer(44 + dataLen);
+    const v = new DataView(wav);
+    const w = (o, s) => { for (let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+    w(0,'RIFF'); v.setUint32(4,36+dataLen,true); w(8,'WAVE');
+    w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+    v.setUint32(24,SR,true); v.setUint32(28,SR*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+    w(36,'data'); v.setUint32(40,dataLen,true);
+    new Int16Array(wav, 44).set(pcm);
+
+    const bytes = new Uint8Array(wav);
+    let b64 = '';
+    for (let i=0;i<bytes.length;i++) b64 += String.fromCharCode(bytes[i]);
+    return 'data:audio/wav;base64,' + btoa(b64);
+  }
+
+  let wavUrl = null;
+  try { wavUrl = gerarWavAlarme(); } catch(e) { wavUrl = null; }
+
+  function criarAudio() {
+    if (!wavUrl) return null;
+    const a = new Audio(wavUrl);
+    a.volume = 1.0;
+    return a;
+  }
+
+  function tocarAviso() {
+    const a = criarAudio();
+    if (a) a.play().catch(() => {});
+  }
+
+  function tocarAlarme() {
+    if (!alarmLoop) return;
+    const a = criarAudio();
+    if (!a) return;
+    audioEl = a;
+    a.play().catch(() => {});
+    a.onended = () => { if (alarmLoop) setTimeout(() => tocarAlarme(), 300); };
+  }
+
+  function pararAlarme() {
+    alarmLoop = false;
+    if (audioEl) { try { audioEl.pause(); audioEl.currentTime = 0; } catch(e){} audioEl = null; }
+  }
+
+  /* Monta overlay com TODOS os pedidos do dia/amanhã */
+  function exibirOverlay(tipo, pedidosDia) {
+    const isAlarme = tipo === 'alarme';
+    const icone = document.getElementById('alarme-icone');
+    icone.textContent = '🔔';
+    icone.className = 'alarme-icone-wrap' + (isAlarme ? ' tocando' : '');
+
+    document.getElementById('alarme-tipo').textContent =
+      isAlarme ? '⏰ ALARME — DIA DO PEDIDO' : '📣 LEMBRETE — PEDIDO AMANHÃ';
+    document.getElementById('alarme-titulo').textContent =
+      isAlarme ? 'Hoje é dia de entrega!' : 'Amanhã tem entrega!';
+
+    const total = pedidosDia.length;
+    const lista = document.getElementById('alarme-lista-pedidos');
+    lista.innerHTML = `<div class="alarme-total">📦 ${total} pedido${total > 1 ? 's' : ''} para ${isAlarme ? 'hoje' : 'amanhã'}</div>` +
+      pedidosDia.map(p => `
+        <div class="alarme-pedido-card">
+          <div class="ap-nome">👤 ${p.nome}</div>
+          <div class="ap-prod">🎂 ${p.produto}</div>
+          ${p.hora ? `<div class="ap-hora">🕗 Entrega: ${p.hora}</div>` : ''}
+        </div>`).join('');
+
+    document.getElementById('alarme-hora').textContent = '';
+    document.getElementById('alarme-overlay').classList.add('open');
+  }
+
+  function verificar(lista) {
+    const hoje   = new Date();
+    const dHoje  = hoje.toISOString().slice(0,10);
+    const amanha = new Date(hoje); amanha.setDate(amanha.getDate()+1);
+    const dAmanha = amanha.toISOString().slice(0,10);
+
+    // ── Alarme do dia — dispara SEMPRE ao abrir o app ──
+    const pedidosHoje = lista.filter(p =>
+      p.data === dHoje && p.status !== 'entregue');
+    if (pedidosHoje.length) {
+      alarmLoop = true;
+      exibirOverlay('alarme', pedidosHoje);
+      tocarAlarme();
+      return;
+    }
+
+    // ── Aviso um dia antes — dispara SEMPRE ao abrir o app ──
+    const pedidosAmanha = lista.filter(p =>
+      p.data === dAmanha && p.status !== 'entregue');
+    if (pedidosAmanha.length) {
+      setTimeout(() => { alarmLoop = true; exibirOverlay('aviso', pedidosAmanha); tocarAlarme(); }, 800);
+    }
+  }
+
+  document.getElementById('btn-desligar').addEventListener('click', () => {
+    pararAlarme();
+    document.getElementById('alarme-overlay').classList.remove('open');
+    document.getElementById('alarme-icone').classList.remove('tocando');
+  });
+
+  return { verificar };
+})();
+
+/* ════════════════════════════════════════════
+   ── ALARME NATIVO — guia para criar no celular ──
+   Aparece automaticamente ao salvar um pedido
+   com data, com texto pronto para copiar
+   e colar no app Relógio
+   ════════════════════════════════════════════ */
+const AlarmeNativo = (() => {
+
+  function fmtDataBr(d) {
+    if (!d) return '';
+    const [a,m,dd] = d.split('-');
+    return `${dd}/${m}/${a}`;
+  }
+
+  function mostrarGuia() {
+    // Agrupa pedidos por data (ignora entregues e sem data)
+    const grupos = {};
+    pedidos.filter(p => p.data && p.status !== 'entregue').forEach(p => {
+      if (!grupos[p.data]) grupos[p.data] = [];
+      grupos[p.data].push(p);
+    });
+
+    const datas = Object.keys(grupos).sort();
+    if (!datas.length) return;
+
+    const container = document.getElementById('alarme-cards-nativo');
+    container.innerHTML = '';
+
+    datas.forEach(data => {
+      const lista = grupos[data];
+      const dataBr = fmtDataBr(data);
+
+      // Texto para o alarme do DIA DA ENTREGA (06:00) — resumo para rótulo do celular
+      const textoEntrega = `🎂 ENTREGA ${dataBr} — ` +
+        lista.map(p => `${p.nome}${p.hora ? ' '+p.hora : ''}`).join(' | ');
+
+      // Cards detalhados de cada pedido
+      const pedidosDetalhados = lista.map(p => `
+        <div style="background:var(--rosa-claro);border-radius:10px;padding:9px 11px;margin-bottom:6px;border-left:3px solid var(--rosa-escuro)">
+          <div style="font-weight:700;color:var(--chocolate);font-size:.88rem">👤 ${p.nome}</div>
+          <div style="font-size:.80rem;color:var(--cinza);margin-top:2px">🎂 ${p.produto || '—'}</div>
+          <div style="font-size:.80rem;color:var(--chocolate);margin-top:2px;font-weight:700">💰 ${p.valor || '—'}</div>
+          <div style="font-size:.78rem;color:var(--rosa-escuro);margin-top:2px;font-weight:700">📅 Entrega: ${dataBr}${p.hora ? ' às '+p.hora : ''}</div>
+        </div>`).join('');
+
+      container.innerHTML += `
+        <div class="alarme-nativo-card">
+          <div class="anc-horario">📅 Entrega: ${dataBr} — ${lista.length} pedido${lista.length>1?'s':''}</div>
+
+          ${pedidosDetalhados}
+
+          <div style="font-size:.75rem;color:var(--cinza);margin:10px 0 4px;font-weight:700">
+            ⏰ Alarme — Dia da entrega (${dataBr}) às 06:00
+          </div>
+          <div class="anc-texto" id="txt-entrega-${data}">${textoEntrega}</div>
+          <button class="btn-copiar" onclick="copiarTexto('txt-entrega-${data}', this)">
+            <i class="fas fa-copy"></i> Copiar texto do alarme
+          </button>
+        </div>`;
+    });
+
+    document.getElementById('modal-alarme-nativo').classList.add('open');
+  }
+
+  document.getElementById('btn-fechar-nativo').addEventListener('click', () => {
+    document.getElementById('modal-alarme-nativo').classList.remove('open');
+  });
+
+  return { mostrarGuia };
+})();
+
+/* Função global para copiar texto */
+function copiarTexto(elId, btn) {
+  const texto = document.getElementById(elId).textContent;
+  navigator.clipboard.writeText(texto).then(() => {
+    btn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+    btn.classList.add('copiado');
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-copy"></i> Copiar texto';
+      btn.classList.remove('copiado');
+    }, 2500);
+  }).catch(() => {
+    // fallback para celulares que bloqueiam clipboard sem HTTPS
+    const ta = document.createElement('textarea');
+    ta.value = texto; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+    btn.classList.add('copiado');
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-copy"></i> Copiar texto';
+      btn.classList.remove('copiado');
+    }, 2500);
+  });
+}
+
+/* ── INIT ── */
+renderListas();
+setTimeout(() => Alarme.verificar(pedidos), 1200);
+</script>
+</body>
+</html>
