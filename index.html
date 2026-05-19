@@ -1040,84 +1040,79 @@ document.getElementById('next-mes').addEventListener('click', () => {
    ════════════════════════════════════════════ */
 const Alarme = (() => {
   let alarmLoop = false;
-  let audioEl = null;
 
-  /* ── Gera WAV PCM 16-bit em memória e devolve data URL ──
-     Sintetiza uma melodia de alarme sem depender de AudioContext,
-     que fica bloqueado no celular sem toque direto do usuário. */
-  function gerarWavAlarme() {
-    const SR = 22050;
-    const notas = [
-      [880,.12,0],[988,.12,.14],[1047,.18,.28],
-      [880,.12,.52],[988,.12,.66],[1047,.30,.80],
-      [784,.12,1.20],[880,.12,1.34],[988,.50,1.48]
-    ];
-    const totalSeg = 2.2;
-    const numSamples = Math.ceil(SR * totalSeg);
-    const buf = new Float32Array(numSamples);
+  /* ── Web Audio API — síntese direta, sem arquivos externos ──
+     AudioContext é criado na primeira interação do usuário (toque
+     na tela) para garantir que funcione em celulares. */
+  let actx = null;
+  let alarmTimeout = null;
 
-    notas.forEach(([freq, dur, t0]) => {
-      const s0 = Math.floor(t0 * SR);
-      const sN = Math.min(numSamples, s0 + Math.floor(dur * SR));
-      for (let i = s0; i < sN; i++) {
-        const fase = (i - s0) / SR;
-        const period = 1 / freq;
-        const pos = (fase % period) / period;
-        const onda = pos < 0.5 ? 4*pos - 1 : 3 - 4*pos;
-        const at = Math.min(1, fase / 0.01);
-        const rel = Math.max(0, 1 - (fase / dur) * 0.6);
-        buf[i] += onda * 0.42 * at * rel;
-      }
-    });
-
-    const pcm = new Int16Array(numSamples);
-    for (let i = 0; i < numSamples; i++) {
-      pcm[i] = Math.max(-32768, Math.min(32767, Math.round(buf[i] * 32767)));
+  function getCtx() {
+    if (!actx) {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
     }
-
-    const dataLen = pcm.buffer.byteLength;
-    const wav = new ArrayBuffer(44 + dataLen);
-    const v = new DataView(wav);
-    const w = (o, s) => { for (let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
-    w(0,'RIFF'); v.setUint32(4,36+dataLen,true); w(8,'WAVE');
-    w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
-    v.setUint32(24,SR,true); v.setUint32(28,SR*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
-    w(36,'data'); v.setUint32(40,dataLen,true);
-    new Int16Array(wav, 44).set(pcm);
-
-    const bytes = new Uint8Array(wav);
-    let b64 = '';
-    for (let i=0;i<bytes.length;i++) b64 += String.fromCharCode(bytes[i]);
-    return 'data:audio/wav;base64,' + btoa(b64);
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
   }
 
-  let wavUrl = null;
-  try { wavUrl = gerarWavAlarme(); } catch(e) { wavUrl = null; }
+  /* Inicia o AudioContext silenciosamente na primeira interação */
+  document.addEventListener('touchstart', () => { try { getCtx(); } catch(e){} }, { once: true, passive: true });
+  document.addEventListener('click',      () => { try { getCtx(); } catch(e){} }, { once: true });
 
-  function criarAudio() {
-    if (!wavUrl) return null;
-    const a = new Audio(wavUrl);
-    a.volume = 1.0;
-    return a;
+  /* Toca uma nota: freq (Hz), dur (s), t0 (s a partir de agora), vol */
+  function tocarNota(ctx, freq, dur, t0, vol) {
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const env = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(freq, now + t0);
+    env.gain.setValueAtTime(0, now + t0);
+    env.gain.linearRampToValueAtTime(vol, now + t0 + 0.01);
+    env.gain.setValueAtTime(vol, now + t0 + dur - 0.04);
+    env.gain.linearRampToValueAtTime(0, now + t0 + dur);
+    osc.connect(env);
+    env.connect(ctx.destination);
+    osc.start(now + t0);
+    osc.stop(now + t0 + dur);
+  }
+
+  /* Melodia de alarme — sequência de [freq, dur, t0] */
+  const MELODIA = [
+    [880, .12, 0.00], [988, .12, .14], [1047, .18, .28],
+    [880, .12, .52],  [988, .12, .66], [1047, .30, .80],
+    [784, .12, 1.20], [880, .12, 1.34],[988,  .50, 1.48]
+  ];
+  const DURACAO_CICLO = 2500;
+
+  function tocarCiclo() {
+    if (!alarmLoop) return;
+    try {
+      const ctx = getCtx();
+      MELODIA.forEach(([f, d, t]) => tocarNota(ctx, f, d, t, 0.55));
+      alarmTimeout = setTimeout(() => tocarCiclo(), DURACAO_CICLO);
+    } catch(e) {}
   }
 
   function tocarAviso() {
-    const a = criarAudio();
-    if (a) a.play().catch(() => {});
+    try {
+      const ctx = getCtx();
+      [[880,.1,0],[1047,.15,.12],[1319,.25,.30]].forEach(([f,d,t]) => tocarNota(ctx, f, d, t, 0.4));
+    } catch(e) {}
   }
 
   function tocarAlarme() {
-    if (!alarmLoop) return;
-    const a = criarAudio();
-    if (!a) return;
-    audioEl = a;
-    a.play().catch(() => {});
-    a.onended = () => { if (alarmLoop) setTimeout(() => tocarAlarme(), 300); };
+    alarmLoop = true;
+    tocarCiclo();
+  }
+
+  function ativarAudioManual() {
+    tocarAlarme();
   }
 
   function pararAlarme() {
     alarmLoop = false;
-    if (audioEl) { try { audioEl.pause(); audioEl.currentTime = 0; } catch(e){} audioEl = null; }
+    if (alarmTimeout) { clearTimeout(alarmTimeout); alarmTimeout = null; }
+    if (actx) { try { actx.close(); } catch(e) {} actx = null; }
   }
 
   /* Monta overlay com TODOS os pedidos do dia/amanhã */
@@ -1176,8 +1171,10 @@ const Alarme = (() => {
     document.getElementById('alarme-icone').classList.remove('tocando');
   });
 
-  return { verificar };
+  return { verificar, ativarAudioManual };
 })();
+
+function ativarAudioManual() { Alarme.ativarAudioManual(); }
 
 /* ════════════════════════════════════════════
    ── ALARME NATIVO — guia para criar no celular ──
