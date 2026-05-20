@@ -1115,31 +1115,54 @@ const Alarme = (() => {
     if (actx) { try { actx.close(); } catch(e) {} actx = null; }
   }
 
-  /* Monta overlay com TODOS os pedidos do dia/amanhã */
+  /* Formata data ISO para dd/mm/yyyy */
+  function fmtData(d) {
+    if (!d) return '';
+    const [a,m,dd] = d.split('-');
+    return dd+'/'+m+'/'+a;
+  }
+
+  /* Monta overlay: tipo = 'alarme' | 'aviso' | 'resumo' */
   function exibirOverlay(tipo, pedidosDia) {
     const isAlarme = tipo === 'alarme';
+    const isAviso  = tipo === 'aviso';
+    const isResumo = tipo === 'resumo';
+
     const icone = document.getElementById('alarme-icone');
-    icone.textContent = '🔔';
+    icone.textContent = isResumo ? '📋' : '🔔';
     icone.className = 'alarme-icone-wrap' + (isAlarme ? ' tocando' : '');
 
     document.getElementById('alarme-tipo').textContent =
-      isAlarme ? '⏰ ALARME — DIA DO PEDIDO' : '📣 LEMBRETE — PEDIDO AMANHÃ';
+      isAlarme ? '⏰ ALARME — DIA DO PEDIDO'
+      : isAviso ? '📣 LEMBRETE — PEDIDO AMANHÃ'
+      : '📋 PEDIDOS PENDENTES';
+
     document.getElementById('alarme-titulo').textContent =
-      isAlarme ? 'Hoje é dia de entrega!' : 'Amanhã tem entrega!';
+      isAlarme ? 'Hoje é dia de entrega!'
+      : isAviso ? 'Amanhã tem entrega!'
+      : 'Seus pedidos em aberto';
 
     const total = pedidosDia.length;
     const lista = document.getElementById('alarme-lista-pedidos');
-    lista.innerHTML = `<div class="alarme-total">📦 ${total} pedido${total > 1 ? 's' : ''} para ${isAlarme ? 'hoje' : 'amanhã'}</div>` +
+
+    const labelTotal = isAlarme ? 'para hoje'
+      : isAviso ? 'para amanhã'
+      : 'pendentes';
+
+    lista.innerHTML = `<div class="alarme-total">📦 ${total} pedido${total > 1 ? 's' : ''} ${labelTotal}</div>` +
       pedidosDia.map(p => `
         <div class="alarme-pedido-card">
           <div class="ap-nome">👤 ${p.nome}</div>
           <div class="ap-prod">🎂 ${p.produto}</div>
-          ${p.hora ? `<div class="ap-hora">🕗 Entrega: ${p.hora}</div>` : ''}
+          ${p.data && isResumo ? `<div class="ap-hora">📅 Entrega: ${fmtData(p.data)}${p.hora ? ' às '+p.hora : ''}</div>` : ''}
+          ${p.hora && !isResumo ? `<div class="ap-hora">🕗 Entrega: ${p.hora}</div>` : ''}
         </div>`).join('');
 
     document.getElementById('alarme-hora').textContent = '';
     document.getElementById('alarme-overlay').classList.add('open');
   }
+
+  let pendingAvisoAmanha = null;
 
   function verificar(lista) {
     const hoje   = new Date();
@@ -1147,9 +1170,26 @@ const Alarme = (() => {
     const amanha = new Date(hoje); amanha.setDate(amanha.getDate()+1);
     const dAmanha = amanha.toISOString().slice(0,10);
 
-    // ── Alarme do dia — dispara SEMPRE ao abrir o app ──
-    const pedidosHoje = lista.filter(p =>
-      p.data === dHoje && p.status !== 'entregue');
+    // Todos os pedidos pendentes (este mes e proximo mes)
+    const todosPendentes = lista.filter(p => p.status !== 'entregue' && p.data);
+
+    if (!todosPendentes.length) return;
+
+    // Pedidos que precisam de alarme sonoro (hoje ou amanha)
+    const pedidosHoje   = todosPendentes.filter(p => p.data === dHoje);
+    const pedidosAmanha = todosPendentes.filter(p => p.data === dAmanha);
+    const precisaSom = pedidosHoje.length > 0 || pedidosAmanha.length > 0;
+
+    // Se tem pedidos hoje E amanha com som: mostra hoje primeiro, depois amanha
+    if (pedidosHoje.length && pedidosAmanha.length) {
+      pendingAvisoAmanha = pedidosAmanha;
+      alarmLoop = true;
+      exibirOverlay('alarme', pedidosHoje);
+      tocarAlarme();
+      return;
+    }
+
+    // So hoje com som
     if (pedidosHoje.length) {
       alarmLoop = true;
       exibirOverlay('alarme', pedidosHoje);
@@ -1157,18 +1197,32 @@ const Alarme = (() => {
       return;
     }
 
-    // ── Aviso um dia antes — dispara SEMPRE ao abrir o app ──
-    const pedidosAmanha = lista.filter(p =>
-      p.data === dAmanha && p.status !== 'entregue');
+    // So amanha com som
     if (pedidosAmanha.length) {
-      setTimeout(() => { alarmLoop = true; exibirOverlay('aviso', pedidosAmanha); tocarAlarme(); }, 800);
+      alarmLoop = true;
+      exibirOverlay('aviso', pedidosAmanha);
+      tocarAlarme();
+      return;
     }
+
+    // Outros dias: mostra todos os pedidos pendentes sem som
+    exibirOverlay('resumo', todosPendentes);
   }
 
   document.getElementById('btn-desligar').addEventListener('click', () => {
     pararAlarme();
     document.getElementById('alarme-overlay').classList.remove('open');
     document.getElementById('alarme-icone').classList.remove('tocando');
+    // Se havia aviso de amanha pendente, abre agora
+    if (pendingAvisoAmanha) {
+      const aviso = pendingAvisoAmanha;
+      pendingAvisoAmanha = null;
+      setTimeout(() => {
+        alarmLoop = true;
+        exibirOverlay('aviso', aviso);
+        tocarAlarme();
+      }, 600);
+    }
   });
 
   return { verificar, ativarAudioManual };
